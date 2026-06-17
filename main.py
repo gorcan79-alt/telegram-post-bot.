@@ -1,66 +1,75 @@
+import os
+import json
 import asyncio
 import logging
-from aiogram import Bot, Dispatcher
+
+from aiogram import Bot
 from datetime import datetime
 import pytz
 
-# Настройки бота
-BOT_TOKEN = "8809011500:AAE0iQyceJpdqSmYqJEfbLoI49nwYUvlpKo"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 CHANNEL_ID = -1003860619693
 
-# Посты для публикации
-POSTS = [
-    {
-        "text": "🚀 КАТАЛОГ КАНАЛОВ ДЛЯ ОБМЕНА РЕФЕРАЛАМИ\n\n✅ Прямые каналы по обмену:\n@refhunter — рефералы, аирдропы\n@partnerkin_en — аффилиат-маркетинг\n\n📩 Хочешь добавить свой канал? Пиши в комментариях!\n\n🔗 Ссылка для обмена: https://t.me/obmenyk_ref",
-        "time": "10:00"
-    },
-    {
-        "text": "💰 ЗАРАБОТОК ОНЛАЙН\n\nСпособы заработка в интернете:\n1. Аффилиат-маркетинг\n2. Фриланс\n3. Онлайн-курсы\n4. Крипто-аирдропы\n\nВыбери свой путь и начни действовать!\n\n🔗 Каталог: https://t.me/obmenyk_ref",
-        "time": "14:00"
-    },
-    {
-        "text": "📈 БИЗНЕС-ИДЕИ 2026\n\nТоп-5 идей для старта:\n1. Онлайн-образование\n2. Дропшиппинг\n3. Контент-маркетинг\n4. SaaS-продукты\n5. Крипто-проекты\n\nНачни с малого и масштабируй!\n\n🔗 Каталог: https://t.me/obmenyk_ref",
-        "time": "18:00"
-    },
-    {
-        "text": "Сегодня «умные деньги» выбирают динамику: новая финансовая элита доверяет свои портфели автономным системам, превращая рыночный хаос в математически выверенный и предсказуемый механизм приумножения капитала. Они больше не ждут прибыли — они ее алгоритмизируют.\n🎉 Присоединяйся ко мне и наблюдай, как деньги поступают каждую секунду.\nПРОМОКОД ОТ МЕНЯ:\nJOKBQF\n🔥  $5 за каждого друга:\n\nhttps://t.me/Arbiva_bot?start=JOKBQF",
-        "time": "11:00"
-    },
-    {
-        "text": "https://t.me/DoomsDayTyrannybot/play?startapp=1453246531\n\nВставай на сторону Искусственного Интеллекта в Doomsday Tyranny",
-        "time": "15:00"
-    },
-    {
-        "text": "🎉 Станьте участником закрытого бета-тестирования нового функционала Antarctic Wallet.\n\nТеперь вам доступны:\n\n— 💳 Карта «Мир» для платежей внутри РФ — её можно привязать к Mir Pay и другим сервисам\n— 📱 Оплаты по QR-коду — как и раньше, но с автоматическими мгновенными возвратами\n— ⚡️ Оплата по QR-коду через СБП без ограничений — теперь можно платить везде, где это возможно\n\n🔐 Для доступа требуется верификация по паспорту РФ и номеру телефона РФ.\n\nhttps://t.me/antarctic_wallet_bot/app?startapp=ref_c350b3913b",
-        "time": "19:00"
-    }
-]
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
+
+def load_posts():
+    with open("posts.json", "r", encoding="utf-8") as f:
+        return json.load(f)
+
 
 async def main():
-    """Основная функция"""
+    if not BOT_TOKEN:
+        raise ValueError("BOT_TOKEN не найден в переменных окружения")
+
     bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher()
-    
-    moscow_tz = pytz.timezone('Europe/Moscow')
-    
-    logging.info("Бот запущен...")
-    
+
+    moscow_tz = pytz.timezone("Europe/Moscow")
+
+    sent_today = set()
+
+    logging.info("Бот запущен")
+
     while True:
-        now = datetime.now(moscow_tz)
-        current_time = now.strftime("%H:%M")
-        
-        for post in POSTS:
-            if post["time"] == current_time:
-                try:
-                    await bot.send_message(CHANNEL_ID, post["text"])
-                    logging.info(f"Пост опубликован в {current_time}")
-                except Exception as e:
-                    logging.error(f"Ошибка публикации: {e}")
-        
-        await asyncio.sleep(60)
+        try:
+            posts = load_posts()
+
+            now = datetime.now(moscow_tz)
+
+            current_date = now.strftime("%Y-%m-%d")
+            current_time = now.strftime("%H:%M")
+
+            for post in posts:
+                post_id = f"{current_date}_{post['time']}"
+
+                if (
+                    post["time"] == current_time
+                    and post_id not in sent_today
+                ):
+                    await bot.send_message(
+                        chat_id=CHANNEL_ID,
+                        text=post["text"]
+                    )
+
+                    sent_today.add(post_id)
+
+                    logging.info(
+                        f"Опубликован пост на {post['time']}"
+                    )
+
+            if current_time == "00:00":
+                sent_today.clear()
+
+            await asyncio.sleep(30)
+
+        except Exception as e:
+            logging.error(f"Ошибка: {e}")
+            await asyncio.sleep(60)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
