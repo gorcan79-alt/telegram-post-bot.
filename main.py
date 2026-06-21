@@ -50,10 +50,18 @@ async def main():
                     post["time"] == current_time
                     and post_id not in sent_today
                 ):
-                    await bot.send_message(
-                        chat_id=CHANNEL_ID,
-                        text=post["text"]
-                    )
+
+                    if "message_id" in post:
+                        await bot.copy_message(
+                            chat_id=CHANNEL_ID,
+                            from_chat_id=post["source_chat_id"],
+                            message_id=post["message_id"]
+                        )
+                    else:
+                        await bot.send_message(
+                            chat_id=CHANNEL_ID,
+                            text=post["text"]
+                        )
 
                     sent_today.add(post_id)
 
