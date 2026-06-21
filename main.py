@@ -142,8 +142,8 @@ async def main():
 
             await asyncio.sleep(30)
 
-        except Exception as e:
-            logging.error(f"Ошибка: {e}")
+    except Exception as e:
+    logging.exception("Полная ошибка")
 
             await asyncio.sleep(60)
 
