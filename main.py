@@ -75,8 +75,8 @@ async def main():
             await asyncio.sleep(30)
 
         except Exception as e:
-            logging.error(f"Ошибка: {e}")
-            await asyncio.sleep(60)
+    logging.exception("Ошибка")
+    await asyncio.sleep(60)
 
 
 if __name__ == "__main__":
