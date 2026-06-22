@@ -18,13 +18,20 @@ logging.basicConfig(
 
 
 def load_posts():
-    with open("posts.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open("posts.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logging.error("Файл posts.json не найден")
+        return []
+    except json.JSONDecodeError as e:
+        logging.error(f"Ошибка при чтении posts.json: {e}")
+        return []
 
 
 async def main():
     if not BOT_TOKEN:
-        raise ValueE rror("BOT_TOKEN не найден в переменных окружения")
+        raise ValueError("BOT_TOKEN не найден в переменных окружения")
 
     bot = Bot(token=BOT_TOKEN)
 
@@ -51,23 +58,26 @@ async def main():
                     and post_id not in sent_today
                 ):
 
-                    if "message_id" in post:
-                        await bot.copy_message(
-                            chat_id=CHANNEL_ID,
-                            from_chat_id=post["source_chat_id"],
-                            message_id=post["message_id"]
-                        )
-                    else:
-                        await bot.send_message(
-                            chat_id=CHANNEL_ID,
-                            text=post["text"]
-                        )
+                    try:
+                        if "message_id" in post:
+                            await bot.copy_message(
+                                chat_id=CHANNEL_ID,
+                                from_chat_id=post["source_chat_id"],
+                                message_id=post["message_id"]
+                            )
+                        else:
+                            await bot.send_message(
+                                chat_id=CHANNEL_ID,
+                                text=post["text"]
+                            )
 
-                    sent_today.add(post_id)
+                        sent_today.add(post_id)
 
-                    logging.info(
-                        f"Опубликован пост на {post['time']}"
-                    )
+                        logging.info(
+                            f"Опубликован пост на {post['time']}"
+                        )
+                    except Exception as e:
+                        logging.error(f"Ошибка при отправке поста: {e}")
 
             if current_time == "00:00":
                 sent_today.clear()
@@ -77,6 +87,7 @@ async def main():
         except Exception as e:
             logging.exception("Ошибка")
             await asyncio.sleep(60)
-            
-    if __name__ == "__main__":
-        asyncio.run(main())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
