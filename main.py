@@ -24,7 +24,7 @@ def load_posts():
 
 async def main():
     if not BOT_TOKEN:
-        raise ValueError("BOT_TOKEN не найден в переменных окружения")
+        raise ValueE rror("BOT_TOKEN не найден в переменных окружения")
 
     bot = Bot(token=BOT_TOKEN)
 
@@ -77,7 +77,5 @@ async def main():
         except Exception as e:
             logging.exception("Ошибка")
             await asyncio.sleep(60)
-
-
     if __name__ == "__main__":
         asyncio.run(main())
